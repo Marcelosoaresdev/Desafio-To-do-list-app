@@ -1,5 +1,5 @@
 import { integer, pgEnum, pgTable, varchar, text } from "drizzle-orm/pg-core";
-import { usersTable } from "./users.schema";
+import { usersTable } from "./users.schema.js";
 
 export const taskStatus = pgEnum("task_status", [
   "pending",
@@ -8,11 +8,13 @@ export const taskStatus = pgEnum("task_status", [
 ]);
 
 export const tasksTable = pgTable("tasks", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   title: varchar({ length: 255 }).notNull(),
   description: text("description"),
   status: taskStatus("status").notNull().default("pending"),
-  userId: integer("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => usersTable.id, { onDelete: "cascade" }),
 });
