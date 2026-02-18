@@ -132,12 +132,24 @@ function TaskCard({ task, onEdit, onDelete }) {
   )
 }
 
+const FILTERS = [
+  { label: 'Todas', value: 'all' },
+  { label: 'Pendentes', value: 'pending' },
+  { label: 'Em andamento', value: 'in_progress' },
+  { label: 'Concluídas', value: 'completed' },
+]
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { tasks, isLoading, createTask, updateTask, deleteTask } = useTasks()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
+  const [activeFilter, setActiveFilter] = useState('all')
+
+  const filteredTasks = activeFilter === 'all'
+    ? tasks
+    : tasks.filter((t) => t.status === activeFilter)
 
   const user = (() => {
     try {
@@ -246,7 +258,7 @@ export default function Dashboard() {
       <main className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Cabeçalho da seção */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight">Minhas Tarefas</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -254,13 +266,29 @@ export default function Dashboard() {
                 ? 'Carregando...'
                 : tasks.length === 0
                 ? 'Nenhuma tarefa ainda'
-                : `${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`}
+                : activeFilter === 'all'
+                ? `${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`
+                : `${filteredTasks.length} de ${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`}
             </p>
           </div>
           <Button size="sm" className="gap-1.5" onClick={handleOpenCreate}>
             <Plus className="h-4 w-4" />
             Nova Tarefa
           </Button>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex gap-2 mb-6 flex-wrap">
+          {FILTERS.map((f) => (
+            <Button
+              key={f.value}
+              variant={activeFilter === f.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveFilter(f.value)}
+            >
+              {f.label}
+            </Button>
+          ))}
         </div>
 
         {/* Grid de tarefas */}
@@ -270,11 +298,11 @@ export default function Dashboard() {
               <SkeletonTaskCard key={i} />
             ))}
           </div>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
