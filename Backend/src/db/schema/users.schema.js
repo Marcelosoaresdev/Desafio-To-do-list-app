@@ -1,4 +1,4 @@
-import { pgTable, integer, varchar, text } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: text("id")

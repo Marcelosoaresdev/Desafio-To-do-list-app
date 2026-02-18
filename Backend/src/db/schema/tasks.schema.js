@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, varchar, text } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, varchar, text } from "drizzle-orm/pg-core";
 import { usersTable } from "./users.schema.js";
 
 export const taskStatus = pgEnum("task_status", [
