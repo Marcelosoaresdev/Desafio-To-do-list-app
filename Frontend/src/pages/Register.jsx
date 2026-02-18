@@ -100,7 +100,7 @@ export default function Register() {
       const result = await response.json()
 
       if (!response.ok) {
-        toast.error(result.message || 'Erro ao criar conta. Tente novamente.')
+        toast.error(result.error || result.message || 'Erro ao criar conta. Tente novamente.')
         return
       }
 

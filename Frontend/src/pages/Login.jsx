@@ -54,7 +54,7 @@ export default function Login() {
       const result = await response.json()
 
       if (!response.ok) {
-        toast.error(result.message || 'Credenciais inválidas. Tente novamente.')
+        toast.error(result.error || result.message || 'Credenciais inválidas. Tente novamente.')
         return
       }
 
