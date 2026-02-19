@@ -14,9 +14,15 @@ export const register = async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
-        error: "Senha deve ter no mínimo 6 caracteres",
+        error: "Senha deve ter no mínimo 8 caracteres",
+      });
+    }
+
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return res.status(400).json({
+        error: "Senha deve conter pelo menos um caractere especial",
       });
     }
 

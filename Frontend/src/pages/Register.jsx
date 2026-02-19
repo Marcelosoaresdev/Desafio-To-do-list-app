@@ -35,7 +35,8 @@ const registerSchema = z
     password: z
       .string()
       .min(1, 'Senha é obrigatória')
-      .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+      .min(8, 'Senha deve ter no mínimo 8 caracteres')
+      .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos um caractere especial'),
     confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -44,9 +45,10 @@ const registerSchema = z
   })
 
 const PASSWORD_RULES = [
-  { label: 'Mínimo 6 caracteres', test: (password) => password.length >= 6 },
+  { label: 'Mínimo 8 caracteres', test: (password) => password.length >= 8 },
   { label: 'Pelo menos uma letra maiúscula', test: (password) => /[A-Z]/.test(password) },
   { label: 'Pelo menos um número', test: (password) => /[0-9]/.test(password) },
+  { label: 'Pelo menos um caractere especial (!@#$...)', test: (password) => /[^A-Za-z0-9]/.test(password) },
 ]
 
 function PasswordStrength({ password }) {

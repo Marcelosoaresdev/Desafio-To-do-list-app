@@ -28,8 +28,7 @@ const loginSchema = z.object({
     .email('Digite um e-mail válido'),
   password: z
     .string()
-    .min(1, 'Senha é obrigatória')
-    .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+    .min(1, 'Senha é obrigatória'),
 })
 
 export default function Login() {
@@ -63,7 +62,7 @@ export default function Login() {
 
       localStorage.setItem('token', result.token)
       localStorage.setItem('user', JSON.stringify(result.user))
-      toast.success(`Bem-vindo de volta, ${result.user.name}!`)
+      toast.success(`Bem-vindo, ${result.user.name}!`)
       navigate('/')
     } catch {
       toast.error('Erro de conexão. Verifique sua internet e tente novamente.')

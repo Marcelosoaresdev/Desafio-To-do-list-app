@@ -75,7 +75,9 @@ function SkeletonTaskCard({ variant = "text" }) {
             {Array.from({ length: variant === "mixed" ? 2 : 3 }).map((_, i) => (
               <div key={i} className="flex items-center gap-2">
                 <Skeleton className="h-4 w-4 rounded shrink-0" />
-                <Skeleton className={cn("h-3.5", i % 2 === 0 ? "w-3/5" : "w-2/4")} />
+                <Skeleton
+                  className={cn("h-3.5", i % 2 === 0 ? "w-3/5" : "w-2/4")}
+                />
               </div>
             ))}
           </div>
@@ -109,7 +111,14 @@ function EmptyState({ title, description }) {
   );
 }
 
-function TaskCard({ task, onEdit, onDelete, onToggleStatus, onToggleItem, index }) {
+function TaskCard({
+  task,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+  onToggleItem,
+  index,
+}) {
   const isCompleted = task.status === "completed";
   const badge = STATUS_BADGE[task.status] ?? {
     variant: "outline",
@@ -202,7 +211,9 @@ function TaskCard({ task, onEdit, onDelete, onToggleStatus, onToggleItem, index 
         )}
 
         {!task.description && !hasItems && (
-          <p className="text-xs text-muted-foreground/40 italic">Sem descrição</p>
+          <p className="text-xs text-muted-foreground/40 italic">
+            Sem descrição
+          </p>
         )}
       </CardContent>
 
@@ -299,7 +310,7 @@ function LogoutButton({ onConfirm, userName }) {
           <AlertDialogTitle className="text-xl">
             Encerrar sessão?
           </AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription className="w-80">
             {userName ? `${userName}, você` : "Você"} será desconectado(a) e
             redirecionado para a tela de login.
           </AlertDialogDescription>
@@ -335,7 +346,8 @@ function parseUser() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleItem } = useTasks();
+  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleItem } =
+    useTasks();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -351,7 +363,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    toast.success("Você saiu da conta.");
+    toast("Você saiu da conta.");
     navigate("/login");
   };
 
@@ -386,9 +398,11 @@ export default function Dashboard() {
     try {
       const newStatus = task.status === "completed" ? "pending" : "completed";
       await updateTask(task.id, { status: newStatus });
-      toast.success(
-        newStatus === "completed" ? "Tarefa concluída!" : "Tarefa reaberta.",
-      );
+      if (newStatus === "completed") {
+        toast.success("Tarefa concluída!");
+      } else {
+        toast.info("Tarefa reaberta.");
+      }
     } catch {
       toast.error("Erro ao atualizar status.");
     }
@@ -397,7 +411,7 @@ export default function Dashboard() {
   const handleDelete = async (id) => {
     try {
       await deleteTask(id);
-      toast.success("Tarefa excluída.");
+      toast("Tarefa excluída.");
     } catch (error) {
       toast.error(error.message || "Erro ao excluir tarefa.");
     }
