@@ -20,10 +20,13 @@ export const register = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
     const existingUser = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .where(eq(usersTable.email, normalizedEmail))
       .limit(1);
 
     if (existingUser.length > 0) {
@@ -37,8 +40,8 @@ export const register = async (req, res) => {
     const [newUser] = await db
       .insert(usersTable)
       .values({
-        name,
-        email,
+        name: trimmedName,
+        email: normalizedEmail,
         passwordHash,
       })
       .returning({
@@ -69,10 +72,12 @@ export const login = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const [user] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .where(eq(usersTable.email, normalizedEmail))
       .limit(1);
 
     if (!user) {
@@ -88,11 +93,11 @@ export const login = async (req, res) => {
         error: "Email ou senha inválidos",
       });
     }
-    
+
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }, 
+      { expiresIn: "7d" }
     );
 
     res.json({
