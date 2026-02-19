@@ -67,5 +67,51 @@ export function useTasks() {
     setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id))
   }
 
-  return { tasks, isLoading, createTask, updateTask, deleteTask }
+  async function toggleItem(taskId, itemId) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) => {
+        if (task.id !== taskId) return task
+        return {
+          ...task,
+          items: task.items.map((item) =>
+            item.id === itemId ? { ...item, completed: !item.completed } : item,
+          ),
+        }
+      }),
+    )
+
+    try {
+      const response = await fetch(`${API_URL}/tasks/${taskId}/items/${itemId}/toggle`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error)
+
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => {
+          if (task.id !== taskId) return task
+          return {
+            ...task,
+            items: task.items.map((item) => (item.id === itemId ? result : item)),
+          }
+        }),
+      )
+    } catch {
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => {
+          if (task.id !== taskId) return task
+          return {
+            ...task,
+            items: task.items.map((item) =>
+              item.id === itemId ? { ...item, completed: !item.completed } : item,
+            ),
+          }
+        }),
+      )
+      toast.error('Erro ao atualizar item.')
+    }
+  }
+
+  return { tasks, isLoading, createTask, updateTask, deleteTask, toggleItem }
 }

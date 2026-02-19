@@ -88,12 +88,13 @@ function EmptyState({ title, description }) {
   );
 }
 
-function TaskCard({ task, onEdit, onDelete, onToggleStatus, index }) {
+function TaskCard({ task, onEdit, onDelete, onToggleStatus, onToggleItem, index }) {
   const isCompleted = task.status === "completed";
   const badge = STATUS_BADGE[task.status] ?? {
     variant: "outline",
     label: task.status,
   };
+  const hasItems = Array.isArray(task.items) && task.items.length > 0;
 
   return (
     <Card
@@ -121,11 +122,11 @@ function TaskCard({ task, onEdit, onDelete, onToggleStatus, index }) {
         </div>
       </CardHeader>
 
-      {task.description ? (
-        <CardContent className="px-4 pb-3">
+      <CardContent className="px-4 pb-3 space-y-2">
+        {task.description && (
           <p
             className={cn(
-              "text-sm leading-relaxed line-clamp-5 whitespace-pre-line",
+              "text-sm leading-relaxed line-clamp-3 whitespace-pre-line",
               isCompleted
                 ? "text-muted-foreground/60 line-through"
                 : "text-muted-foreground",
@@ -133,14 +134,56 @@ function TaskCard({ task, onEdit, onDelete, onToggleStatus, index }) {
           >
             {task.description}
           </p>
-        </CardContent>
-      ) : (
-        <CardContent className="px-4 pb-3">
-          <p className="text-xs text-muted-foreground/40 italic">
-            Sem descrição
-          </p>
-        </CardContent>
-      )}
+        )}
+
+        {hasItems && (
+          <ul className="space-y-1.5">
+            {task.items.map((item) => (
+              <li key={item.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onToggleItem(task.id, item.id)}
+                  className={cn(
+                    "flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors",
+                    item.completed
+                      ? "bg-emerald-600 border-emerald-600 text-white"
+                      : "border-border bg-background hover:border-emerald-500",
+                  )}
+                  title={item.completed ? "Desmarcar item" : "Marcar item"}
+                >
+                  {item.completed && (
+                    <svg
+                      viewBox="0 0 10 8"
+                      fill="none"
+                      className="w-2.5 h-2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 4l2.5 2.5L9 1" />
+                    </svg>
+                  )}
+                </button>
+                <span
+                  className={cn(
+                    "text-sm leading-snug",
+                    item.completed
+                      ? "line-through text-muted-foreground/50"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!task.description && !hasItems && (
+          <p className="text-xs text-muted-foreground/40 italic">Sem descrição</p>
+        )}
+      </CardContent>
 
       <CardFooter className="px-4 py-2.5 border-t border-border mt-auto">
         <div className="flex items-center justify-end w-full gap-1">
@@ -271,7 +314,7 @@ function parseUser() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { tasks, isLoading, createTask, updateTask, deleteTask } = useTasks();
+  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleItem } = useTasks();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -431,6 +474,7 @@ export default function Dashboard() {
                 onEdit={handleOpenEdit}
                 onDelete={handleDelete}
                 onToggleStatus={handleToggleStatus}
+                onToggleItem={toggleItem}
               />
             ))}
           </div>

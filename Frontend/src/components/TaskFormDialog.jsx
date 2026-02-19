@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Type, AlignLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, Type, AlignLeft, CheckCircle2, ListChecks, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ const taskSchema = z.object({
     .max(255, "Título muito longo"),
   description: z.string().max(500, "Descrição muito longa").optional(),
   status: z.enum(["pending", "in_progress", "completed"]),
+  items: z.array(z.object({ text: z.string(), completed: z.boolean() })).optional(),
 });
 
 export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
@@ -44,8 +45,10 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(taskSchema),
-    defaultValues: { title: "", description: "", status: "pending" },
+    defaultValues: { title: "", description: "", status: "pending", items: [] },
   });
+
+  const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
   useEffect(() => {
     if (open) {
@@ -55,8 +58,12 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
               title: task.title,
               description: task.description ?? "",
               status: task.status,
+              items: (task.items ?? []).map((item) => ({
+                text: item.text,
+                completed: item.completed,
+              })),
             }
-          : { title: "", description: "", status: "pending" },
+          : { title: "", description: "", status: "pending", items: [] },
       );
     }
   }, [open, task, reset]);
@@ -84,7 +91,7 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
             {/* Título */}
             <div className="space-y-2">
               <Label
@@ -120,8 +127,8 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
               </Label>
               <Textarea
                 id="description"
-                className="min-h-[140px] bg-background/50 focus:bg-background transition-colors"
-                placeholder="Adicione detalhes, notas ou subtarefas..."
+                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors"
+                placeholder="Adicione detalhes ou notas..."
                 {...register("description")}
               />
               {errors.description && (
@@ -129,6 +136,44 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
                   {errors.description.message}
                 </p>
               )}
+            </div>
+
+            {/* Itens */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-muted-foreground font-medium">
+                <ListChecks className="h-4 w-4" /> Itens{" "}
+                <span className="text-xs font-normal opacity-70">(opcional)</span>
+              </Label>
+
+              {fields.length > 0 && (
+                <div className="space-y-2">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                      <Input
+                        className="h-9 bg-background/50 focus:bg-background transition-colors text-sm"
+                        placeholder={`Item ${index + 1}`}
+                        {...register(`items.${index}.text`)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => append({ text: "", completed: false })}
+                className="w-full flex items-center justify-center gap-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Adicionar item
+              </button>
             </div>
 
             {/* Status */}
