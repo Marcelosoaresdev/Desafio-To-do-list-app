@@ -50,7 +50,7 @@ const STATUS_BADGE = {
   completed: { variant: "default", label: "Concluída" },
 };
 
-function SkeletonTaskCard() {
+function SkeletonTaskCard({ variant = "text" }) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-2 pt-4 px-4">
@@ -59,10 +59,29 @@ function SkeletonTaskCard() {
           <Skeleton className="h-5 w-20 rounded-full shrink-0" />
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-3">
-        <Skeleton className="h-3.5 w-full mb-1.5" />
-        <Skeleton className="h-3.5 w-4/5" />
+
+      <CardContent className="px-4 pb-3 space-y-2">
+        {/* description lines */}
+        {(variant === "text" || variant === "mixed") && (
+          <div className="space-y-1.5">
+            <Skeleton className="h-3.5 w-full" />
+            <Skeleton className="h-3.5 w-4/5" />
+          </div>
+        )}
+
+        {/* checklist items */}
+        {(variant === "items" || variant === "mixed") && (
+          <div className="space-y-2">
+            {Array.from({ length: variant === "mixed" ? 2 : 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded shrink-0" />
+                <Skeleton className={cn("h-3.5", i % 2 === 0 ? "w-3/5" : "w-2/4")} />
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
+
       <CardFooter className="px-4 py-2.5 border-t border-border mt-auto">
         <div className="flex items-center justify-end w-full gap-1">
           <Skeleton className="h-7 w-7 rounded-md" />
@@ -73,6 +92,8 @@ function SkeletonTaskCard() {
     </Card>
   );
 }
+
+const SKELETON_VARIANTS = ["text", "items", "mixed", "text", "items", "mixed"];
 
 function EmptyState({ title, description }) {
   return (
@@ -458,8 +479,8 @@ export default function Dashboard() {
         {/* Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonTaskCard key={i} />
+            {SKELETON_VARIANTS.map((variant, i) => (
+              <SkeletonTaskCard key={i} variant={variant} />
             ))}
           </div>
         ) : filteredTasks.length === 0 ? (

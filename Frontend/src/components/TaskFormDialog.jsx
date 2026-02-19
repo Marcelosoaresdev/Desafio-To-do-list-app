@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Type, AlignLeft, CheckCircle2, ListChecks, Plus, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +32,7 @@ const taskSchema = z.object({
     .max(255, "Título muito longo"),
   description: z.string().max(500, "Descrição muito longa").optional(),
   status: z.enum(["pending", "in_progress", "completed"]),
-  items: z.array(z.object({ text: z.string(), completed: z.boolean() })).optional(),
+  items: z.array(z.object({ text: z.string().min(1, "Item não pode estar vazio"), completed: z.boolean() })),
 });
 
 export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
@@ -147,22 +148,36 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit, task }) {
 
               {fields.length > 0 && (
                 <div className="space-y-2">
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="flex items-center gap-2">
-                      <Input
-                        className="h-9 bg-background/50 focus:bg-background transition-colors text-sm"
-                        placeholder={`Item ${index + 1}`}
-                        {...register(`items.${index}.text`)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                  {fields.map((field, index) => {
+                    const itemError = errors.items?.[index]?.text;
+                    return (
+                      <div key={field.id} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className={cn(
+                              "h-9 bg-background/50 focus:bg-background transition-colors text-sm",
+                              itemError && "border-destructive focus-visible:ring-destructive",
+                            )}
+                            placeholder={`Item ${index + 1}`}
+                            aria-invalid={!!itemError}
+                            {...register(`items.${index}.text`)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        {itemError && (
+                          <p className="text-xs text-destructive font-medium animate-in slide-in-from-top-1 pl-0.5">
+                            {itemError.message}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
