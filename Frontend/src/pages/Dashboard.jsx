@@ -28,6 +28,13 @@ import {
 import { TaskFormDialog } from '@/components/TaskFormDialog'
 import { useTasks } from '@/hooks/useTasks'
 
+const FILTERS = [
+  { label: 'Todas', value: 'all' },
+  { label: 'Pendentes', value: 'pending' },
+  { label: 'Em andamento', value: 'in_progress' },
+  { label: 'Concluídas', value: 'completed' },
+]
+
 function SkeletonTaskCard() {
   return (
     <Card className="flex flex-col gap-0">
@@ -54,18 +61,14 @@ function SkeletonTaskCard() {
   )
 }
 
-function EmptyState() {
+function EmptyState({ title, description }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-4">
         <ClipboardList className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="text-base font-semibold text-foreground">
-        Nenhuma tarefa encontrada
-      </h3>
-      <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-        Crie sua primeira tarefa clicando no botão acima e comece a organizar seu dia.
-      </p>
+      <h3 className="text-base font-semibold text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground mt-1 max-w-xs">{description}</p>
     </div>
   )
 }
@@ -132,12 +135,49 @@ function TaskCard({ task, onEdit, onDelete }) {
   )
 }
 
-const FILTERS = [
-  { label: 'Todas', value: 'all' },
-  { label: 'Pendentes', value: 'pending' },
-  { label: 'Em andamento', value: 'in_progress' },
-  { label: 'Concluídas', value: 'completed' },
-]
+function LogoutButton({ onConfirm }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline">Sair</span>
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza que deseja sair?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Você será desconectado da sua conta e redirecionado para a tela de login.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>Sair</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+function getTaskCountLabel(tasks, filteredTasks, activeFilter, isLoading) {
+  if (isLoading) return 'Carregando...'
+  if (tasks.length === 0) return 'Nenhuma tarefa ainda'
+  if (activeFilter === 'all') return `${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`
+  return `${filteredTasks.length} de ${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`
+}
+
+function parseUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user'))
+  } catch {
+    return null
+  }
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -149,15 +189,9 @@ export default function Dashboard() {
 
   const filteredTasks = activeFilter === 'all'
     ? tasks
-    : tasks.filter((t) => t.status === activeFilter)
+    : tasks.filter((task) => task.status === activeFilter)
 
-  const user = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('user'))
-    } catch {
-      return null
-    }
-  })()
+  const user = parseUser()
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -200,32 +234,15 @@ export default function Dashboard() {
     }
   }
 
-  const confirmLogout = (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Sair</span>
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Tem certeza que deseja sair?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Você será desconectado da sua conta e redirecionado para a tela de login.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleLogout}>Sair</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  )
+  const emptyStateProps = tasks.length === 0
+    ? {
+        title: 'Nenhuma tarefa encontrada',
+        description: 'Crie sua primeira tarefa clicando no botão acima e comece a organizar seu dia.',
+      }
+    : {
+        title: 'Nenhuma tarefa nesta categoria',
+        description: 'Tente selecionar outro filtro ou crie uma nova tarefa.',
+      }
 
   return (
     <div className="min-h-screen bg-background">
@@ -249,7 +266,7 @@ export default function Dashboard() {
                 </span>
               </span>
             )}
-            {confirmLogout}
+            <LogoutButton onConfirm={handleLogout} />
           </div>
         </div>
       </header>
@@ -262,13 +279,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-xl font-bold tracking-tight">Minhas Tarefas</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {isLoading
-                ? 'Carregando...'
-                : tasks.length === 0
-                ? 'Nenhuma tarefa ainda'
-                : activeFilter === 'all'
-                ? `${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`
-                : `${filteredTasks.length} de ${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`}
+              {getTaskCountLabel(tasks, filteredTasks, activeFilter, isLoading)}
             </p>
           </div>
           <Button size="sm" className="gap-1.5" onClick={handleOpenCreate}>
@@ -279,14 +290,14 @@ export default function Dashboard() {
 
         {/* Filtros */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {FILTERS.map((f) => (
+          {FILTERS.map((filter) => (
             <Button
-              key={f.value}
-              variant={activeFilter === f.value ? 'default' : 'outline'}
+              key={filter.value}
+              variant={activeFilter === filter.value ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setActiveFilter(f.value)}
+              onClick={() => setActiveFilter(filter.value)}
             >
-              {f.label}
+              {filter.label}
             </Button>
           ))}
         </div>
@@ -299,7 +310,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : filteredTasks.length === 0 ? (
-          <EmptyState />
+          <EmptyState {...emptyStateProps} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTasks.map((task) => (
