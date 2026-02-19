@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-
-const API_URL = 'http://localhost:3000'
+import { API_URL } from '@/lib/api'
 
 function getAuthHeaders() {
   return {
@@ -42,7 +41,7 @@ export function useTasks() {
     })
     const result = await response.json()
     if (!response.ok) throw new Error(result.error)
-    setTasks((prev) => [result, ...prev])
+    setTasks((currentTasks) => [result, ...currentTasks])
   }
 
   async function updateTask(id, data) {
@@ -53,7 +52,7 @@ export function useTasks() {
     })
     const result = await response.json()
     if (!response.ok) throw new Error(result.error)
-    setTasks((prev) => prev.map((t) => (t.id === id ? result : t)))
+    setTasks((currentTasks) => currentTasks.map((task) => (task.id === id ? result : task)))
   }
 
   async function deleteTask(id) {
@@ -65,7 +64,7 @@ export function useTasks() {
       const result = await response.json()
       throw new Error(result.error)
     }
-    setTasks((prev) => prev.filter((t) => t.id !== id))
+    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id))
   }
 
   return { tasks, isLoading, createTask, updateTask, deleteTask }
