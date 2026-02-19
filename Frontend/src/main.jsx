@@ -11,7 +11,7 @@ createRoot(document.getElementById('root')).render(
       position="top-right"
       richColors
       closeButton
-      duration={4000}
+      duration={2000}
     />
   </StrictMode>
 )

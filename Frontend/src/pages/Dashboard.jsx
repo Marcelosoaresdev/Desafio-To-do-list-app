@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   CheckSquare,
   LogOut,
@@ -8,12 +8,21 @@ import {
   ClipboardList,
   Pencil,
   Trash2,
-} from 'lucide-react'
+  AlertTriangle,
+  Circle,
+  CheckCircle2,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,107 +33,177 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { TaskFormDialog } from '@/components/TaskFormDialog'
-import { useTasks } from '@/hooks/useTasks'
+} from "@/components/ui/alert-dialog";
+import { TaskFormDialog } from "@/components/TaskFormDialog";
+import { useTasks } from "@/hooks/useTasks";
 
 const FILTERS = [
-  { label: 'Todas', value: 'all' },
-  { label: 'Pendentes', value: 'pending' },
-  { label: 'Em andamento', value: 'in_progress' },
-  { label: 'Concluídas', value: 'completed' },
-]
+  { label: "Todas", value: "all" },
+  { label: "Pendentes", value: "pending" },
+  { label: "Em andamento", value: "in_progress" },
+  { label: "Concluídas", value: "completed" },
+];
+
+const STATUS_BADGE = {
+  pending: { variant: "outline", label: "Pendente" },
+  in_progress: { variant: "secondary", label: "Em andamento" },
+  completed: { variant: "default", label: "Concluída" },
+};
 
 function SkeletonTaskCard() {
   return (
-    <Card className="flex flex-col gap-0">
-      <CardHeader className="pb-3">
+    <Card className="flex flex-col">
+      <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-start justify-between gap-2">
-          <Skeleton className="h-5 w-2/3" />
-          <Skeleton className="h-5 w-16 rounded-full shrink-0" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-5 w-20 rounded-full shrink-0" />
         </div>
       </CardHeader>
-      <CardContent className="pb-3">
-        <Skeleton className="h-3.5 w-full mb-2" />
+      <CardContent className="px-4 pb-3">
+        <Skeleton className="h-3.5 w-full mb-1.5" />
         <Skeleton className="h-3.5 w-4/5" />
       </CardContent>
-      <CardFooter className="pt-0 border-t border-border mt-auto">
-        <div className="flex items-center justify-between w-full pt-3">
-          <Skeleton className="h-3 w-24" />
-          <div className="flex gap-1.5">
-            <Skeleton className="h-7 w-7 rounded-md" />
-            <Skeleton className="h-7 w-7 rounded-md" />
-          </div>
+      <CardFooter className="px-4 py-2.5 border-t border-border mt-auto">
+        <div className="flex items-center justify-end w-full gap-1">
+          <Skeleton className="h-7 w-7 rounded-md" />
+          <Skeleton className="h-7 w-7 rounded-md" />
+          <Skeleton className="h-7 w-7 rounded-md" />
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 function EmptyState({ title, description }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-4">
-        <ClipboardList className="h-8 w-8 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+      <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-muted mb-4">
+        <ClipboardList className="h-7 w-7 text-muted-foreground" />
       </div>
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="text-sm text-muted-foreground mt-1 max-w-xs">{description}</p>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground mt-1 max-w-xs leading-relaxed">
+        {description}
+      </p>
     </div>
-  )
+  );
 }
 
-function TaskCard({ task, onEdit, onDelete }) {
+function TaskCard({ task, onEdit, onDelete, onToggleStatus, index }) {
+  const isCompleted = task.status === "completed";
+  const badge = STATUS_BADGE[task.status] ?? {
+    variant: "outline",
+    label: task.status,
+  };
+
   return (
-    <Card className="flex flex-col gap-0">
-      <CardHeader className="pb-3">
+    <Card
+      className={cn(
+        "flex flex-col min-h-[180px] transition-all duration-200 hover:shadow-md animate-fade-in-up",
+        isCompleted && "opacity-75",
+      )}
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold leading-tight line-clamp-2">
+          <h3
+            className={cn(
+              "text-base font-semibold leading-snug line-clamp-2",
+              isCompleted
+                ? "line-through text-muted-foreground"
+                : "text-foreground",
+            )}
+          >
             {task.title}
           </h3>
-          <Badge status={task.status} className="shrink-0" />
+          <Badge variant={badge.variant} className="shrink-0">
+            {badge.label}
+          </Badge>
         </div>
       </CardHeader>
 
-      {task.description && (
-        <CardContent className="pb-3">
-          <p className="text-xs text-muted-foreground line-clamp-2">
+      {task.description ? (
+        <CardContent className="px-4 pb-3">
+          <p
+            className={cn(
+              "text-sm leading-relaxed line-clamp-5 whitespace-pre-line",
+              isCompleted
+                ? "text-muted-foreground/60 line-through"
+                : "text-muted-foreground",
+            )}
+          >
             {task.description}
+          </p>
+        </CardContent>
+      ) : (
+        <CardContent className="px-4 pb-3">
+          <p className="text-xs text-muted-foreground/40 italic">
+            Sem descrição
           </p>
         </CardContent>
       )}
 
-      <CardFooter className="pt-0 border-t border-border mt-auto">
-        <div className="flex items-center justify-end w-full pt-3 gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+      <CardFooter className="px-4 py-2.5 border-t border-border mt-auto">
+        <div className="flex items-center justify-end w-full gap-1">
+          <button
+            onClick={() => onToggleStatus(task)}
+            className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-md cursor-pointer",
+              "transition-colors duration-150",
+              isCompleted
+                ? "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+            title={isCompleted ? "Reabrir tarefa" : "Marcar como concluída"}
+          >
+            {isCompleted ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <Circle className="h-4 w-4" />
+            )}
+          </button>
+
+          <button
             onClick={() => onEdit(task)}
+            className="flex items-center justify-center w-7 h-7 rounded-md cursor-pointer text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
+            title="Editar tarefa"
           >
             <Pencil className="h-3.5 w-3.5" />
-          </Button>
+          </button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              <button
+                className="flex items-center justify-center w-7 h-7 rounded-md cursor-pointer text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
+                title="Excluir tarefa"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 shrink-0 mb-2">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <AlertDialogTitle className="text-xl">
+                  Excluir tarefa?
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  A tarefa <strong>"{task.title}"</strong> será excluída permanentemente.
+                  A tarefa{" "}
+                  <span className="font-medium text-foreground">
+                    "{task.title}"
+                  </span>{" "}
+                  será excluída permanentemente.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(task.id)}>
-                  Excluir
+                <AlertDialogCancel className="w-full sm:w-auto">
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => onDelete(task.id)}
+                >
+                  Confirmar Exclusão
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -132,10 +211,10 @@ function TaskCard({ task, onEdit, onDelete }) {
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
-function LogoutButton({ onConfirm }) {
+function LogoutButton({ onConfirm, userName }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -150,107 +229,132 @@ function LogoutButton({ onConfirm }) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Tem certeza que deseja sair?</AlertDialogTitle>
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 shrink-0 mb-2">
+            <LogOut className="h-6 w-6 text-primary" />
+          </div>
+          <AlertDialogTitle className="text-xl">
+            Encerrar sessão?
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Você será desconectado da sua conta e redirecionado para a tela de login.
+            {userName ? `${userName}, você` : "Você"} será desconectado(a) e
+            redirecionado para a tela de login.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Sair</AlertDialogAction>
+          <AlertDialogCancel className="w-full sm:w-auto">
+            Permanecer
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="w-full sm:w-auto">
+            Sair da Conta
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }
 
 function getTaskCountLabel(tasks, filteredTasks, activeFilter, isLoading) {
-  if (isLoading) return 'Carregando...'
-  if (tasks.length === 0) return 'Nenhuma tarefa ainda'
-  if (activeFilter === 'all') return `${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`
-  return `${filteredTasks.length} de ${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''}`
+  if (isLoading) return "Carregando...";
+  if (tasks.length === 0) return "Nenhuma tarefa ainda";
+  if (activeFilter === "all")
+    return `${tasks.length} tarefa${tasks.length !== 1 ? "s" : ""}`;
+  return `${filteredTasks.length} de ${tasks.length} tarefa${tasks.length !== 1 ? "s" : ""}`;
 }
 
 function parseUser() {
   try {
-    return JSON.parse(localStorage.getItem('user'))
+    return JSON.parse(localStorage.getItem("user"));
   } catch {
-    return null
+    return null;
   }
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const { tasks, isLoading, createTask, updateTask, deleteTask } = useTasks()
+  const navigate = useNavigate();
+  const { tasks, isLoading, createTask, updateTask, deleteTask } = useTasks();
 
-  const [formOpen, setFormOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState(null)
-  const [activeFilter, setActiveFilter] = useState('all')
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  const filteredTasks = activeFilter === 'all'
-    ? tasks
-    : tasks.filter((task) => task.status === activeFilter)
+  const filteredTasks =
+    activeFilter === "all"
+      ? tasks
+      : tasks.filter((task) => task.status === activeFilter);
 
-  const user = parseUser()
+  const user = parseUser();
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    toast.success('Você saiu da conta.')
-    navigate('/login')
-  }
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    toast.success("Você saiu da conta.");
+    navigate("/login");
+  };
 
   const handleOpenCreate = () => {
-    setEditingTask(null)
-    setFormOpen(true)
-  }
+    setEditingTask(null);
+    setFormOpen(true);
+  };
 
   const handleOpenEdit = (task) => {
-    setEditingTask(task)
-    setFormOpen(true)
-  }
+    setEditingTask(task);
+    setFormOpen(true);
+  };
 
   const handleFormSubmit = async (data) => {
     try {
       if (editingTask) {
-        await updateTask(editingTask.id, data)
-        toast.success('Tarefa atualizada!')
+        await updateTask(editingTask.id, data);
+        toast.success("Tarefa atualizada!");
       } else {
-        await createTask(data)
-        toast.success('Tarefa criada!')
+        await createTask(data);
+        toast.success("Tarefa criada!");
       }
     } catch (error) {
-      toast.error(error.message || 'Ocorreu um erro. Tente novamente.')
-      throw error
+      toast.error(error.message || "Ocorreu um erro. Tente novamente.");
+      throw error;
     }
-  }
+  };
+
+  const handleToggleStatus = async (task) => {
+    try {
+      const newStatus = task.status === "completed" ? "pending" : "completed";
+      await updateTask(task.id, { status: newStatus });
+      toast.success(
+        newStatus === "completed" ? "Tarefa concluída!" : "Tarefa reaberta.",
+      );
+    } catch {
+      toast.error("Erro ao atualizar status.");
+    }
+  };
 
   const handleDelete = async (id) => {
     try {
-      await deleteTask(id)
-      toast.success('Tarefa excluída.')
+      await deleteTask(id);
+      toast.success("Tarefa excluída.");
     } catch (error) {
-      toast.error(error.message || 'Erro ao excluir tarefa.')
+      toast.error(error.message || "Erro ao excluir tarefa.");
     }
-  }
+  };
 
-  const emptyStateProps = tasks.length === 0
-    ? {
-        title: 'Nenhuma tarefa encontrada',
-        description: 'Crie sua primeira tarefa clicando no botão acima e comece a organizar seu dia.',
-      }
-    : {
-        title: 'Nenhuma tarefa nesta categoria',
-        description: 'Tente selecionar outro filtro ou crie uma nova tarefa.',
-      }
+  const emptyStateProps =
+    tasks.length === 0
+      ? {
+          title: "Nenhuma tarefa ainda",
+          description:
+            'Clique em "Nova Tarefa" para começar a organizar o seu dia.',
+        }
+      : {
+          title: "Nenhuma tarefa nesta categoria",
+          description: "Tente selecionar outro filtro ou crie uma nova tarefa.",
+        };
 
   return (
     <div className="min-h-screen bg-background">
-
       {/* Navbar */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary">
               <CheckSquare className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
@@ -260,21 +364,23 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             {user && (
               <span className="hidden sm:block text-sm text-muted-foreground">
-                Olá,{' '}
+                Olá,{" "}
                 <span className="font-medium text-foreground">
-                  {user.name.split(' ')[0]}
+                  {user.name.split(" ")[0]}
                 </span>
               </span>
             )}
-            <LogoutButton onConfirm={handleLogout} />
+            <LogoutButton
+              onConfirm={handleLogout}
+              userName={user?.name?.split(" ")[0]}
+            />
           </div>
         </div>
       </header>
 
-      {/* Conteúdo principal */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
-
-        {/* Cabeçalho da seção */}
+      {/* Main */}
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        {/* Section header */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight">Minhas Tarefas</h1>
@@ -288,21 +394,25 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Filtros */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        {/* Filtros — segmented control */}
+        <div className="flex gap-1 p-1 bg-muted mx-auto rounded-xl mb-5 w-fit">
           {FILTERS.map((filter) => (
-            <Button
+            <button
               key={filter.value}
-              variant={activeFilter === filter.value ? 'default' : 'outline'}
-              size="sm"
               onClick={() => setActiveFilter(filter.value)}
+              className={cn(
+                "px-2.5 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer",
+                activeFilter === filter.value
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/60",
+              )}
             >
               {filter.label}
-            </Button>
+            </button>
           ))}
         </div>
 
-        {/* Grid de tarefas */}
+        {/* Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -313,19 +423,20 @@ export default function Dashboard() {
           <EmptyState {...emptyStateProps} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTasks.map((task) => (
+            {filteredTasks.map((task, index) => (
               <TaskCard
                 key={task.id}
                 task={task}
+                index={index}
                 onEdit={handleOpenEdit}
                 onDelete={handleDelete}
+                onToggleStatus={handleToggleStatus}
               />
             ))}
           </div>
         )}
       </main>
 
-      {/* Modal de criar/editar tarefa */}
       <TaskFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -333,5 +444,5 @@ export default function Dashboard() {
         task={editingTask}
       />
     </div>
-  )
+  );
 }

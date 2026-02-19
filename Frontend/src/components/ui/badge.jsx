@@ -1,31 +1,30 @@
 import * as React from 'react'
+import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-const statusStyles = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-}
+const badgeVariants = cva(
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
+  {
+    variants: {
+      variant: {
+        default:
+          'border-transparent bg-primary text-primary-foreground',
+        secondary:
+          'border-transparent bg-secondary text-secondary-foreground',
+        destructive:
+          'border-transparent bg-destructive text-destructive-foreground',
+        outline:
+          'border-border text-foreground',
+      },
+    },
+    defaultVariants: { variant: 'default' },
+  }
+)
 
-const statusLabels = {
-  pending: 'Pendente',
-  in_progress: 'Em progresso',
-  completed: 'Concluída',
-}
-
-function Badge({ status, className, ...props }) {
+function Badge({ className, variant, ...props }) {
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-        statusStyles[status] ?? 'bg-muted text-muted-foreground',
-        className
-      )}
-      {...props}
-    >
-      {statusLabels[status] ?? status}
-    </span>
+    <span className={cn(badgeVariants({ variant }), className)} {...props} />
   )
 }
 
-export { Badge, statusLabels }
+export { Badge, badgeVariants }

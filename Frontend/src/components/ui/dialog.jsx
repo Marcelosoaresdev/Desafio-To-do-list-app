@@ -1,23 +1,23 @@
-import * as React from 'react'
-import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const Dialog = DialogPrimitive.Root
-const DialogTrigger = DialogPrimitive.Trigger
-const DialogPortal = DialogPrimitive.Portal
-const DialogClose = DialogPrimitive.Close
+const Dialog = DialogPrimitive.Root;
+const DialogTrigger = DialogPrimitive.Trigger;
+const DialogPortal = DialogPrimitive.Portal;
+const DialogClose = DialogPrimitive.Close;
 
 function DialogOverlay({ className, ...props }) {
   return (
     <DialogPrimitive.Overlay
       className={cn(
-        'fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        className
+        "fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function DialogContent({ className, children, ...props }) {
@@ -26,34 +26,58 @@ function DialogContent({ className, children, ...props }) {
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-          className
+          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+          className,
         )}
         {...props}
       >
         {children}
-        <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity">
+        <DialogClose className="absolute right-4 top-4 flex items-center justify-center w-7 h-7 rounded-md cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-150">
           <X className="h-4 w-4" />
           <span className="sr-only">Fechar</span>
         </DialogClose>
       </DialogPrimitive.Content>
     </DialogPortal>
-  )
+  );
 }
 
 function DialogHeader({ className, ...props }) {
   return (
-    <div className={cn('flex flex-col space-y-1.5 mb-4', className)} {...props} />
-  )
+    <div
+      className={cn("flex flex-col space-y-1.5 ", className)}
+      {...props}
+    />
+  );
 }
 
 function DialogTitle({ className, ...props }) {
   return (
     <DialogPrimitive.Title
-      className={cn('text-lg font-semibold', className)}
+      className={cn("text-lg font-semibold", className)}
       {...props}
     />
-  )
+  );
+}
+
+function DialogDescription({ className, ...props }) {
+  return (
+    <DialogPrimitive.Description
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogFooter({ className, ...props }) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export {
@@ -62,5 +86,7 @@ export {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
   DialogClose,
-}
+};
