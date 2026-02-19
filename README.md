@@ -85,12 +85,15 @@ Todo-List/
     │   ├── App.jsx                # Configura o React Router com rotas públicas e protegidas
     │   ├── index.css              # Variáveis CSS do tema (shadcn) e diretivas do Tailwind
     │   ├── lib/
+    │   │   ├── api.js             # Exporta API_URL como constante centralizada para todas as chamadas
     │   │   └── utils.js           # Utilitário cn() para mesclar classes Tailwind condicionalmente
     │   ├── pages/
     │   │   ├── Login.jsx          # Tela de login com validação Zod e react-hook-form
     │   │   ├── Register.jsx       # Tela de cadastro com indicador de força de senha
     │   │   └── Dashboard.jsx      # Tela principal: listagem, filtros, criação e edição de tarefas
     │   ├── components/
+    │   │   ├── AppLogo.jsx        # Componente de logo/marca reutilizado nas páginas de autenticação
+    │   │   ├── PasswordInput.jsx  # Input de senha com botão de mostrar/ocultar reutilizável
     │   │   ├── TaskFormDialog.jsx  # Modal reutilizável para criar e editar tarefas
     │   │   └── ui/                # Componentes base do shadcn/ui (Button, Card, Badge, Dialog…)
     │   └── hooks/
@@ -144,14 +147,17 @@ Um usuário possui zero ou mais tarefas. A deleção de um usuário remove todas
 
 **`register(req, res)`**
 - Valida presença de `name`, `email` e `password` (mínimo 6 caracteres)
-- Verifica se o email já existe no banco
+- Normaliza o email com `trim()` e `toLowerCase()` antes de qualquer operação
+- Aplica `trim()` no nome para evitar espaços nas pontas
+- Verifica duplicidade de email no banco antes de inserir
 - Gera hash da senha com `bcrypt.hash(password, 10)`
 - Insere novo usuário e retorna os dados públicos (id, name, email)
 - Respostas: `201 Created` ou `400 Bad Request`
 
 **`login(req, res)`**
 - Valida presença de `email` e `password`
-- Busca usuário pelo email
+- Normaliza o email com `trim()` e `toLowerCase()` para garantir consistência com o cadastro
+- Busca usuário pelo email normalizado
 - Compara senha com o hash via `bcrypt.compare`
 - Em caso de sucesso, assina um JWT com `{ userId }` e expiração de 7 dias
 - Retorna `{ token, user: { id, name, email } }`
@@ -164,12 +170,15 @@ Um usuário possui zero ou mais tarefas. A deleção de um usuário remove todas
 - Retorna array de tarefas em `200 OK`
 
 **`createTask(req, res)`**
-- Valida presença de `title`
-- Insere nova tarefa associada ao usuário autenticado
+- Valida presença e conteúdo de `title` (rejeita strings com apenas espaços via `trim()`)
+- Valida que `status`, se informado, é um dos valores permitidos: `pending`, `in_progress` ou `completed`
+- Insere nova tarefa com `title` sanitizado associada ao usuário autenticado via `req.userId`
 - Retorna a tarefa criada em `201 Created`
 
 **`updateTask(req, res)`**
-- Atualiza `title`, `description` e/ou `status` da tarefa `:id`
+- Valida que `title`, se informado, não é vazio após `trim()`
+- Valida que `status`, se informado, pertence ao enum de valores válidos
+- Atualiza apenas os campos enviados na requisição
 - A cláusula `WHERE id = :id AND user_id = req.userId` garante que o usuário só edita suas próprias tarefas
 - Retorna tarefa atualizada ou `404 Not Found`
 
@@ -219,15 +228,18 @@ Todas as rotas de tarefas (`/tasks`) passam pelo middleware `authenticate` antes
 ### Isolamento de Dados por Usuário
 Cada operação de leitura, atualização e deleção filtra por `user_id = req.userId`, onde `req.userId` vem do token JWT verificado. Isso impede que um usuário acesse ou modifique tarefas de outros usuários, mesmo conhecendo o ID da tarefa.
 
-### Validação de Input
-- **Backend:** Validação manual dos campos obrigatórios antes de qualquer operação no banco. O Drizzle ORM utiliza queries parametrizadas, eliminando o risco de SQL Injection.
+### Validação e Sanitização de Input
+- **Backend:** Validação manual dos campos obrigatórios antes de qualquer operação no banco. `title` e `name` passam por `trim()` para rejeitar strings compostas apenas de espaços. O campo `status` é validado contra a lista de valores permitidos do enum antes de chegar ao banco. Email é normalizado com `trim()` e `toLowerCase()` para garantir consistência entre cadastro e login.
 - **Frontend:** Schemas Zod validam os formulários com react-hook-form antes do envio. Dados inválidos não chegam à API.
 
+### Proteção contra SQL Injection
+O Drizzle ORM gera exclusivamente queries parametrizadas (ex: `WHERE email = $1`). Não há nenhuma concatenação direta de strings em queries SQL no código, eliminando completamente o risco de SQL Injection.
+
 ### Proteção contra XSS
-O React escapa automaticamente todo conteúdo renderizado via JSX, prevenindo a execução de scripts maliciosos injetados em títulos ou descrições de tarefas.
+O React escapa automaticamente todo conteúdo renderizado via JSX, prevenindo a execução de scripts maliciosos injetados em títulos ou descrições de tarefas. O backend retorna exclusivamente JSON, nunca HTML, eliminando vetores de XSS na camada de API.
 
 ### Tratamento de Erros
-O backend retorna mensagens de erro genéricas para falhas de autenticação (evitando enumerar usuários existentes). Erros internos do servidor retornam `500` sem expor detalhes de implementação.
+O backend retorna mensagens de erro genéricas para falhas de autenticação (evitando enumerar usuários existentes) e para erros internos do servidor (`500`), sem expor stack traces, mensagens do banco de dados ou detalhes de implementação. Erros são registrados internamente via `console.error` para fins de depuração.
 
 ---
 
