@@ -158,7 +158,7 @@ users (1) ──< tasks (N) ──< task_items (N)
 #### `auth.controller.js`
 
 **`register(req, res)`**
-- Valida presença de `name`, `email` e `password` (mínimo 6 caracteres)
+- Valida presença de `name`, `email` e `password` (mínimo 8 caracteres e pelo menos um caractere especial)
 - Normaliza o email com `trim()` e `toLowerCase()` antes de qualquer operação
 - Aplica `trim()` no nome para evitar espaços nas pontas
 - Verifica duplicidade de email no banco antes de inserir
@@ -259,6 +259,9 @@ Expõe: `{ tasks, isLoading, createTask, updateTask, deleteTask, toggleItem }`
 
 ### Hash de Senhas
 As senhas nunca são armazenadas em texto plano. O bcrypt é usado com fator de custo 10, tornando ataques de força bruta computacionalmente inviáveis. O hash é gerado no momento do cadastro e verificado no login via `bcrypt.compare`.
+
+### Requisitos de Senha
+No cadastro, a senha deve ter no mínimo 8 caracteres e conter pelo menos um caractere especial (ex.: `!@#$%`). Essa validação ocorre tanto no frontend (Zod + indicador visual de força) quanto no backend, garantindo que senhas fracas não sejam aceitas mesmo sem passar pelo formulário.
 
 ### Proteção de Rotas Privadas
 Todas as rotas de tarefas (`/tasks`) passam pelo middleware `authenticate` antes de chegar aos controllers. O middleware rejeita qualquer requisição sem um JWT válido. No frontend, `PrivateRoute` verifica a presença do token em `localStorage` e redireciona para `/login` caso ausente.
