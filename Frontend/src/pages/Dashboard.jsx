@@ -356,11 +356,13 @@ export default function Dashboard() {
   };
 
   const handleOpenCreate = () => {
+    document.activeElement?.blur();
     setEditingTask(null);
     setFormOpen(true);
   };
 
   const handleOpenEdit = (task) => {
+    document.activeElement?.blur();
     setEditingTask(task);
     setFormOpen(true);
   };
