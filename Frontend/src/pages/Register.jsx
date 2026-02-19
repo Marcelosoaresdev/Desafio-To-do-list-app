@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2, CheckSquare, Eye, EyeOff, Check, X } from 'lucide-react'
+import { Loader2, Check, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { AppLogo } from '@/components/AppLogo'
+import { PasswordInput } from '@/components/PasswordInput'
+import { API_URL } from '@/lib/api'
 
 const registerSchema = z
   .object({
@@ -40,29 +43,32 @@ const registerSchema = z
     path: ['confirmPassword'],
   })
 
-function PasswordStrength({ password }) {
-  const rules = [
-    { label: 'Mínimo 6 caracteres', valid: password.length >= 6 },
-    { label: 'Pelo menos uma letra maiúscula', valid: /[A-Z]/.test(password) },
-    { label: 'Pelo menos um número', valid: /[0-9]/.test(password) },
-  ]
+const PASSWORD_RULES = [
+  { label: 'Mínimo 6 caracteres', test: (password) => password.length >= 6 },
+  { label: 'Pelo menos uma letra maiúscula', test: (password) => /[A-Z]/.test(password) },
+  { label: 'Pelo menos um número', test: (password) => /[0-9]/.test(password) },
+]
 
+function PasswordStrength({ password }) {
   if (!password) return null
 
   return (
     <ul className="mt-2 space-y-1">
-      {rules.map((rule) => (
-        <li key={rule.label} className="flex items-center gap-1.5 text-xs">
-          {rule.valid ? (
-            <Check className="h-3 w-3 text-green-500 shrink-0" />
-          ) : (
-            <X className="h-3 w-3 text-muted-foreground shrink-0" />
-          )}
-          <span className={rule.valid ? 'text-green-600' : 'text-muted-foreground'}>
-            {rule.label}
-          </span>
-        </li>
-      ))}
+      {PASSWORD_RULES.map((rule) => {
+        const valid = rule.test(password)
+        return (
+          <li key={rule.label} className="flex items-center gap-1.5 text-xs">
+            {valid ? (
+              <Check className="h-3 w-3 text-green-500 shrink-0" />
+            ) : (
+              <X className="h-3 w-3 text-muted-foreground shrink-0" />
+            )}
+            <span className={valid ? 'text-green-600' : 'text-muted-foreground'}>
+              {rule.label}
+            </span>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -87,7 +93,7 @@ export default function Register() {
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -117,13 +123,7 @@ export default function Register() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
 
-        {/* Logo / Brand */}
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary">
-            <CheckSquare className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight">TodoList</span>
-        </div>
+        <AppLogo />
 
         <Card>
           <CardHeader className="space-y-1 pb-4">
@@ -148,9 +148,7 @@ export default function Register() {
                   {...register('name')}
                 />
                 {errors.name && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.name.message}
-                  </p>
+                  <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
                 )}
               </div>
 
@@ -166,42 +164,23 @@ export default function Register() {
                   {...register('email')}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.email.message}
-                  </p>
+                  <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
                 )}
               </div>
 
               {/* Senha */}
               <div className="space-y-1.5">
                 <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    className="pr-10"
-                    aria-invalid={!!errors.password}
-                    {...register('password')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                <PasswordInput
+                  id="password"
+                  autoComplete="new-password"
+                  show={showPassword}
+                  onToggle={() => setShowPassword((prev) => !prev)}
+                  aria-invalid={!!errors.password}
+                  {...register('password')}
+                />
                 {errors.password && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.password.message}
-                  </p>
+                  <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
                 )}
                 <PasswordStrength password={passwordValue} />
               </div>
@@ -209,33 +188,16 @@ export default function Register() {
               {/* Confirmar Senha */}
               <div className="space-y-1.5">
                 <Label htmlFor="confirmPassword">Confirmar senha</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirm ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    className="pr-10"
-                    aria-invalid={!!errors.confirmPassword}
-                    {...register('confirmPassword')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={showConfirm ? 'Ocultar confirmação' : 'Mostrar confirmação'}
-                  >
-                    {showConfirm ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                <PasswordInput
+                  id="confirmPassword"
+                  autoComplete="new-password"
+                  show={showConfirm}
+                  onToggle={() => setShowConfirm((prev) => !prev)}
+                  aria-invalid={!!errors.confirmPassword}
+                  {...register('confirmPassword')}
+                />
                 {errors.confirmPassword && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.confirmPassword.message}
-                  </p>
+                  <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>
                 )}
               </div>
 
